@@ -10,31 +10,34 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.sql.DataSource;
 
 @Configuration
 public class DemoSecurityConfig {
 
+
+    // add support for JDBC
+
     @Bean
-    public InMemoryUserDetailsManager userDetailsManager() {
-        UserDetails hamza = User.builder()
-                .username("hamza")
-                .password("{noop}test123")
-                .roles("EMPLOYEE", "MANAGER", "ADMIN")
-                .build();
+    public UserDetailsManager userDetailsManager (DataSource dataSource){
 
-        UserDetails hanan = User.builder()
-                .username("hanan")
-                .password("{noop}test123")
-                .roles("EMPLOYEE", "MANAGER")
-                .build();
-        UserDetails rayhan = User.builder()
-                .username("rayhan")
-                .password("{noop}test123")
-                .roles("EMPLOYEE")
-                .build();
+        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager(dataSource);
 
-        return new InMemoryUserDetailsManager(hamza, hanan, rayhan);
+        // define query to retrieve a user by username
+        jdbcUserDetailsManager.setUsersByUsernameQuery(
+                "select user_id, pw, active from members where user_id=?");
+
+        // define query to retrieve the authorities/roles by username
+
+        jdbcUserDetailsManager.setAuthoritiesByUsernameQuery(
+                "select user_id, role from roles where user_id=?"
+        );
+
+        return jdbcUserDetailsManager;
     }
 
     @Bean
@@ -57,5 +60,30 @@ public class DemoSecurityConfig {
 
         return http.build();
     }
+
+
+    /*
+    @Bean
+    public InMemoryUserDetailsManager userDetailsManager() {
+        UserDetails hamza = User.builder()
+                .username("hamza")
+                .password("{noop}test123")
+                .roles("EMPLOYEE", "MANAGER", "ADMIN")
+                .build();
+
+        UserDetails hanan = User.builder()
+                .username("hanan")
+                .password("{noop}test123")
+                .roles("EMPLOYEE", "MANAGER")
+                .build();
+        UserDetails rayhan = User.builder()
+                .username("rayhan")
+                .password("{noop}test123")
+                .roles("EMPLOYEE")
+                .build();
+
+        return new InMemoryUserDetailsManager(hamza, hanan, rayhan);
+    }
+*/
 
 }
